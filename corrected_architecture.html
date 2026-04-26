@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Corrected Classification Architecture</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap');
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:#0f1117;
+    font-family:'IBM Plex Sans',sans-serif;
+    color:#e0e0e0;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:32px 16px;
+  }
+
+  h1{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    font-weight:600;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:#5c9eff;
+    margin-bottom:8px;
+  }
+  .subtitle{
+    font-size:11px;
+    color:#555;
+    font-family:'IBM Plex Mono',monospace;
+    margin-bottom:32px;
+    letter-spacing:0.05em;
+  }
+
+  .diagram{
+    width:100%;
+    max-width:720px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:0;
+  }
+
+  /* NODE TYPES */
+  .node{
+    border-radius:8px;
+    padding:10px 16px;
+    text-align:center;
+    position:relative;
+    border:1px solid;
+  }
+  .node-title{
+    font-size:12px;
+    font-weight:600;
+    font-family:'IBM Plex Mono',monospace;
+    letter-spacing:0.04em;
+  }
+  .node-sub{
+    font-size:10px;
+    color:#999;
+    margin-top:3px;
+    font-family:'IBM Plex Sans',sans-serif;
+  }
+
+  .c-gray  { background:#1a1d24; border-color:#333; }
+  .c-purple{ background:#1e1628; border-color:#6c3fc5; }
+  .c-coral { background:#2a1520; border-color:#c0392b; }
+  .c-amber { background:#1f1a10; border-color:#d4a017; }
+  .c-green { background:#0f2018; border-color:#27ae60; }
+  .c-teal  { background:#0d1f22; border-color:#1abc9c; }
+  .c-blue  { background:#0d1627; border-color:#2980b9; }
+  .c-red   { background:#2a1010; border-color:#e74c3c; }
+
+  .w-sm { width:260px; }
+  .w-md { width:320px; }
+  .w-lg { width:440px; }
+  .w-xl { width:560px; }
+
+  /* ARROWS */
+  .arrow{
+    width:2px;
+    background:linear-gradient(to bottom, #444, #444);
+    margin:0 auto;
+    position:relative;
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+  }
+  .arrow::after{
+    content:'';
+    position:absolute;
+    bottom:-6px;
+    left:50%;
+    transform:translateX(-50%);
+    border:5px solid transparent;
+    border-top-color:#555;
+  }
+  .arrow-sm{ height:24px; }
+  .arrow-md{ height:36px; }
+
+  /* SPLIT ROW */
+  .split{
+    display:flex;
+    width:100%;
+    max-width:720px;
+    gap:0;
+    align-items:flex-start;
+    position:relative;
+    justify-content:space-between;
+  }
+
+  .split-col{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    flex:1;
+  }
+
+  /* HORIZONTAL LINE for splits */
+  .hline{
+    width:100%;
+    height:1px;
+    background:linear-gradient(to right, transparent 5%, #444 20%, #444 80%, transparent 95%);
+    margin: 0 auto;
+    position:relative;
+  }
+
+  /* FIX BADGES */
+  .fix-badge{
+    font-size:9px;
+    font-family:'IBM Plex Mono',monospace;
+    padding:3px 8px;
+    border-radius:3px;
+    display:inline-block;
+    margin-top:6px;
+    letter-spacing:0.05em;
+  }
+  .fix-bad { background:#3a1010; color:#e57373; border:1px solid #e57373; }
+  .fix-good{ background:#0f2a10; color:#81c784; border:1px solid #81c784; }
+  .fix-info{ background:#101a3a; color:#5c9eff; border:1px solid #3a6abf; }
+
+  /* LABEL on arrow */
+  .arr-label{
+    font-size:10px;
+    font-family:'IBM Plex Mono',monospace;
+    color:#666;
+    margin:0 8px;
+    white-space:nowrap;
+  }
+
+  /* RETRAIN LOOP INDICATOR */
+  .loop-bar{
+    width:4px;
+    background:linear-gradient(to bottom,#6c3fc5,#2980b9);
+    border-radius:2px;
+    position:absolute;
+    left:-28px;
+    top:0;
+    bottom:0;
+    opacity:0.6;
+  }
+
+  .section-label{
+    font-size:9px;
+    font-family:'IBM Plex Mono',monospace;
+    color:#444;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    margin-bottom:4px;
+    align-self:flex-start;
+    margin-left:calc(50% - 220px);
+  }
+
+  .row-center{ display:flex; align-items:center; justify-content:center; }
+  .col{ display:flex; flex-direction:column; align-items:center; }
+
+  /* H-connector SVG */
+  .connector{
+    width:100%;
+    max-width:720px;
+    overflow:visible;
+  }
+
+</style>
+</head>
+<body>
+
+<h1>Shipment Industry Classification — Corrected Architecture</h1>
+<p class="subtitle">ml-primary · llm-fallback · unified output · explicit retrain triggers</p>
+
+<div class="diagram">
+
+  <!-- SOURCE -->
+  <div class="section-label">① ingestion</div>
+  <div class="node c-gray w-md">
+    <div class="node-title">Commodity table</div>
+    <div class="node-sub">shipment_no + description · Delta / ADLS</div>
+  </div>
+  <div class="arrow arrow-sm"></div>
+
+  <!-- CLEANING -->
+  <div class="section-label">② preprocessing</div>
+  <div class="node c-purple w-md">
+    <div class="node-title">Data cleaning</div>
+    <div class="node-sub">normalise · strip part codes · fix abbreviations · handle nulls</div>
+  </div>
+  <div class="arrow arrow-sm"></div>
+
+  <!-- FEATURE ENG -->
+  <div class="node c-purple w-lg">
+    <div class="node-title">Feature engineering &amp; transformation</div>
+    <div class="node-sub">sentence embeddings (sentence-transformers) · TF-IDF · feature store (Delta)</div>
+  </div>
+  <div class="arrow arrow-sm"></div>
+
+  <!-- ML MODEL -->
+  <div class="section-label">③ primary classifier</div>
+  <div class="node c-coral w-lg">
+    <div class="node-title">ML model — primary classifier</div>
+    <div class="node-sub">XGBoost or Logistic Regression · MLflow Model Registry</div>
+    <div class="node-sub">outputs: predicted class · confidence score · top-2 gap · OOD flag</div>
+    <span class="fix-bad">✕ K-means removed — clustering ≠ classification</span>
+  </div>
+  <div class="arrow arrow-sm"></div>
+
+  <!-- CONFIDENCE DIAMOND -->
+  <div class="section-label">④ routing gate</div>
+  <div class="node c-amber w-lg" style="border-radius:4px; transform:perspective(300px)">
+    <div class="node-title">◇ &nbsp;Confidence routing gate</div>
+    <div class="node-sub">conf ≥ 0.70 AND top-2 gap ≥ 0.15 AND not OOD → accept</div>
+    <div class="node-sub" style="color:#d4a017">any condition fails → escalate to LLM</div>
+  </div>
+
+  <!-- SPLIT: HIGH left, LOW right -->
+  <svg class="connector" height="48" viewBox="0 0 720 48" preserveAspectRatio="none">
+    <line x1="360" y1="0" x2="150" y2="0" stroke="#444" stroke-width="1.5"/>
+    <line x1="360" y1="0" x2="570" y2="0" stroke="#444" stroke-width="1.5"/>
+    <line x1="150" y1="0" x2="150" y2="48" stroke="#444" stroke-width="1.5" marker-end="url(#a)"/>
+    <line x1="570" y1="0" x2="570" y2="48" stroke="#444" stroke-width="1.5" marker-end="url(#a)"/>
+    <text x="100" y="28" fill="#555" font-size="11" font-family="IBM Plex Mono">High / pass</text>
+    <text x="590" y="28" fill="#555" font-size="11" font-family="IBM Plex Mono">Low / OOD</text>
+    <defs>
+      <marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M2 1L8 5L2 9" fill="none" stroke="#555" stroke-width="1.5" stroke-linecap="round"/>
+      </marker>
+    </defs>
+  </svg>
+
+  <!-- SPLIT COLUMNS -->
+  <div class="split" style="max-width:720px; align-items:flex-start;">
+    <!-- LEFT: ML accepted -->
+    <div class="split-col" style="padding:0 16px;">
+      <div class="node c-green w-sm">
+        <div class="node-title">✓ ML accepted</div>
+        <div class="node-sub">source = ml_accepted</div>
+        <div class="node-sub">→ write to unified output</div>
+      </div>
+    </div>
+    <!-- RIGHT: LLM path -->
+    <div class="split-col" style="padding:0 16px;">
+      <div class="section-label" style="margin-left:0">⑤ llm fallback</div>
+      <div class="node c-teal w-sm">
+        <div class="node-title">LLM fallback (Claude)</div>
+        <div class="node-sub">structured prompt → label + reasoning + confidence</div>
+      </div>
+      <div class="arrow arrow-sm"></div>
+      <div class="node c-amber w-sm">
+        <div class="node-title">LLM confidence gate</div>
+        <div class="node-sub">≥ 0.75 → accept · &lt; 0.75 → human review</div>
+        <span class="fix-bad">✕ "Decision Engine" replaced with explicit logic</span>
+      </div>
+      <!-- sub-split: accepted vs human -->
+      <svg width="260" height="40" viewBox="0 0 260 40">
+        <line x1="130" y1="0" x2="60" y2="0" stroke="#444" stroke-width="1.5"/>
+        <line x1="130" y1="0" x2="200" y2="0" stroke="#444" stroke-width="1.5"/>
+        <line x1="60"  y1="0" x2="60"  y2="40" stroke="#444" stroke-width="1.5" marker-end="url(#b)"/>
+        <line x1="200" y1="0" x2="200" y2="40" stroke="#444" stroke-width="1.5" marker-end="url(#b)"/>
+        <text x="10"  y="26" fill="#555" font-size="9" font-family="IBM Plex Mono">accepted</text>
+        <text x="148" y="26" fill="#555" font-size="9" font-family="IBM Plex Mono">low conf</text>
+        <defs>
+          <marker id="b" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="#555" stroke-width="1.5" stroke-linecap="round"/>
+          </marker>
+        </defs>
+      </svg>
+      <div style="display:flex;gap:12px;">
+        <div class="node c-green" style="width:118px;">
+          <div class="node-title" style="font-size:10px;">LLM accepted</div>
+          <div class="node-sub">source = llm</div>
+        </div>
+        <div class="node c-red" style="width:118px;">
+          <div class="node-title" style="font-size:10px;">Human review</div>
+          <div class="node-sub">analyst labels</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECONVERGE -->
+  <svg class="connector" height="52" viewBox="0 0 720 52" preserveAspectRatio="none">
+    <line x1="150" y1="0" x2="150" y2="28" stroke="#444" stroke-width="1.5"/>
+    <line x1="460" y1="0" x2="460" y2="28" stroke="#444" stroke-width="1.5"/>
+    <line x1="590" y1="0" x2="590" y2="28" stroke="#444" stroke-width="1.5"/>
+    <line x1="150" y1="28" x2="590" y2="28" stroke="#444" stroke-width="1.5"/>
+    <line x1="360" y1="28" x2="360" y2="52" stroke="#444" stroke-width="1.5" marker-end="url(#c)"/>
+    <text x="50" y="20" fill="#27ae60" font-size="9" font-family="IBM Plex Mono">ml path</text>
+    <text x="385" y="20" fill="#1abc9c" font-size="9" font-family="IBM Plex Mono">llm path</text>
+    <text x="520" y="20" fill="#e74c3c" font-size="9" font-family="IBM Plex Mono">human</text>
+    <defs>
+      <marker id="c" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M2 1L8 5L2 9" fill="none" stroke="#444" stroke-width="1.5" stroke-linecap="round"/>
+      </marker>
+    </defs>
+  </svg>
+
+  <!-- UNIFIED OUTPUT -->
+  <div class="section-label">⑥ unified output</div>
+  <div class="node c-blue w-xl">
+    <div class="node-title">Unified output table (Delta)</div>
+    <div class="node-sub">industry_label · confidence · classification_source · version · timestamp</div>
+    <span class="fix-good">✓ single table — not two separate outputs</span>
+  </div>
+  <div class="arrow arrow-sm"></div>
+
+  <!-- FEEDBACK POOL -->
+  <div class="section-label">⑦ retraining</div>
+  <div class="node c-purple w-xl">
+    <div class="node-title">Labelled feedback pool (Delta)</div>
+    <div class="node-sub">accumulates confirmed labels · human-verified LLM outputs only</div>
+    <span class="fix-bad">✕ raw LLM output never feeds ML directly — human verification required</span>
+  </div>
+  <div class="arrow arrow-sm"></div>
+
+  <!-- RETRAIN TRIGGER -->
+  <div class="node c-amber w-xl">
+    <div class="node-title">Retrain trigger — Databricks Workflow</div>
+    <div class="node-sub">cron: 1st of month  OR  ≥ 500 new labels (whichever fires first)</div>
+    <div class="node-sub">eval gate: new model must beat champion F1 by ≥ 1% to deploy</div>
+    <span class="fix-good">✓ explicit trigger conditions — not just an arrow labeled "Retrain"</span>
+  </div>
+
+  <!-- LOOP ARROW BACK -->
+  <svg class="connector" height="40" viewBox="0 0 720 40" preserveAspectRatio="none">
+    <text x="260" y="24" fill="#6c3fc5" font-size="10" font-family="IBM Plex Mono" opacity="0.7">↑ retrains ML model · MLflow promotes new champion ↑</text>
+  </svg>
+
+  <!-- LEGEND -->
+  <div style="margin-top:28px; display:flex; flex-wrap:wrap; gap:10px; justify-content:center; max-width:600px;">
+    <span class="fix-bad">✕ issues from original</span>
+    <span class="fix-good">✓ fixes applied</span>
+    <span class="fix-info" style="background:#101a3a;color:#5c9eff;border-color:#3a6abf;">ℹ new components</span>
+  </div>
+
+</div>
+</body>
+</html>
