@@ -1,0 +1,201 @@
+I need to build a production-grade industry classification model in Databricks that will eventually scale to billions of records.
+
+Source Tables
+Commodity Table
+f6132737.commodity_experimental_v2
+
+Columns:
+
+shp_trk_nbr
+cust_acct_nbr
+globl_enti_nbr
+globl_bus_nm
+bus_nm
+ean_bus_nm
+cntnt_desc
+harmo_cd
+cntry_of_manuf_cd
+revenue
+volume
+Industry Labels Table
+f6132737.shipment_industry_labels
+
+Columns:
+
+shp_trk_nbr
+industry
+
+Industry values:
+
+Industrial
+Healthcare
+Aerospace
+Services
+Consumer Goods - Non Perishables
+Consumer Goods - Perishables
+Technology
+Automotive
+Energy Chemical Utilities & Mining
+Transportation & Logistics
+Other Services
+Business Objective
+
+Build a supervised machine learning model that predicts:
+
+cntnt_desc -> industry
+
+The model will be used only when:
+
+HS Mapping fails
+AND
+Description Mapping fails
+
+Therefore:
+
+High precision is preferred over maximum recall.
+Training Dataset Requirements
+
+Create a training dataset by joining:
+
+commodity_experimental_v2
+
+with
+
+shipment_industry_labels
+
+using:
+
+shp_trk_nbr
+
+Requirements:
+
+Deduplicate
+
+For training, use:
+
+lower(trim(cntnt_desc))
+
+and remove exact duplicate pairs of:
+
+cntnt_desc
+industry
+
+to reduce bias.
+
+Data Quality
+
+Exclude:
+
+null cntnt_desc
+blank cntnt_desc
+Output
+
+Create:
+
+industry_training_dataset
+
+containing:
+
+description
+industry
+Class Distribution Analysis
+
+Generate:
+
+Record count by industry
+Percentage distribution by industry
+Imbalance ratio
+Recommendation for class weighting strategy
+Modeling Requirements
+
+Build a baseline text classification pipeline using Spark ML.
+
+Pipeline:
+
+description
+→ Tokenizer
+→ StopWordsRemover
+→ HashingTF
+→ IDF
+→ LogisticRegression
+
+Requirements:
+
+Multi-class classification
+
+Predict:
+
+industry
+Handle imbalance
+
+Use class weights.
+
+Train/Test Split
+
+Use:
+
+80% train
+20% test
+
+with a fixed random seed.
+
+Evaluation
+
+Generate:
+
+Overall Metrics
+Accuracy
+Weighted Precision
+Weighted Recall
+F1 Score
+Per-Class Metrics
+
+For every industry:
+
+Precision
+Recall
+F1
+Support
+Confusion Matrix
+
+Generate a confusion matrix showing:
+
+actual industry
+predicted industry
+Feature Importance
+
+Provide:
+
+Most influential terms by industry
+Top keywords contributing to predictions
+Industry-specific vocabulary patterns
+Production Readiness
+
+Estimate:
+
+Training time
+Prediction throughput
+Suitability for:
+10 billion historical records
+4 million daily records
+
+Recommend whether:
+
+Logistic Regression
+Random Forest
+XGBoost
+LightGBM
+Transformer
+
+is the best production model for this use case.
+
+Deliverables
+
+Generate:
+
+SQL to create training dataset
+PySpark code for training
+Evaluation notebook
+Model registration in MLflow
+Batch scoring example
+Production architecture recommendation
